@@ -3,13 +3,24 @@ import { Link } from "react-router-dom";
 import { Box, BoxProps } from "../components/box";
 import { BoxContainer } from "../components/box-container";
 import { LinkModel } from "../lib/links";
+import { createCookie, eraseCookie, readCookie } from "../util/cookie";
+
+const cookieName = "key";
 
 export function Index() {
   const [error, setError] = useState("");
   const [key, setKey] = useState("");
   useEffect(() => {
-    const providedKey = prompt("key");
-    setKey(providedKey ?? "");
+    const cookieKey = readCookie(cookieName);
+    if (cookieKey) {
+      setKey(cookieKey);
+    } else {
+      const promptKey = prompt("key");
+      if (promptKey) {
+        createCookie(cookieName, promptKey, 365);
+        setKey(promptKey);
+      }
+    }
   }, []);
   const [links, setLinks] = useState([] as BoxProps[]);
 
@@ -48,11 +59,14 @@ export function Index() {
         setLinks(links);
         setError("");
       } catch (err) {
+        eraseCookie(cookieName);
         setError("could not fetch links, see console");
         console.log("Could not fetch links", err);
       }
     }
-    fetchData();
+    if (key) {
+      fetchData();
+    }
   }, [key]);
 
   return (
