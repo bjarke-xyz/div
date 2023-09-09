@@ -195,7 +195,7 @@ function NaturalDates({ useLocalTimezone }: { useLocalTimezone: boolean }) {
           "Content-Type": "application/json",
         },
       });
-      const json = await resp.json();
+      const json = (await resp.json()) as { output: string };
       return json?.output ?? null;
     } catch (error) {
       console.log("Error during parse request", error);
