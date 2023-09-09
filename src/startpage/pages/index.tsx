@@ -5,12 +5,22 @@ import { BoxContainer } from "../components/box-container";
 import { LinkModel } from "../lib/links";
 
 export function Index() {
+  const [error, setError] = useState("");
+  const [key, setKey] = useState("");
+  useEffect(() => {
+    const providedKey = prompt("key");
+    setKey(providedKey ?? "");
+  }, []);
   const [links, setLinks] = useState([] as BoxProps[]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const resp = await fetch("/api/startpage/links");
+        const resp = await fetch("/api/startpage/links", {
+          headers: {
+            Authorization: key,
+          },
+        });
         const json = (await resp.json()) as LinkModel[];
 
         let links: BoxProps[] = [];
@@ -36,17 +46,19 @@ export function Index() {
         });
         links = links.sort((a, b) => (a.title > b.title ? 1 : -1));
         setLinks(links);
+        setError("");
       } catch (err) {
+        setError("could not fetch links, see console");
         console.log("Could not fetch links", err);
       }
     }
     fetchData();
-  }, []);
+  }, [key]);
 
   return (
     <div>
       <Link to="/startpage/links">✏️</Link>
-
+      {error?.length > 0 && <div>{error}</div>}
       <BoxContainer>
         {(links ?? [])
           .filter((x) => !x.hidden)

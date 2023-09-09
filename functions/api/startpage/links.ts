@@ -26,14 +26,22 @@ export async function onRequest(
   if (request.method === "GET") {
     return getLinks(request, env);
   } else if (request.method === "POST") {
-    return postLinks(request, env);
+    if (context.functionPath?.endsWith("keycheck")) {
+      const keycheckResp = keycheck(request, env);
+      if (keycheckResp) {
+        return keycheckResp;
+      }
+      return new Response("OK", { status: 200 });
+    } else {
+      return postLinks(request, env);
+    }
   }
   return new Response("Not found", {
     status: 404,
   });
 }
 
-async function postLinks(request: Request, env: any) {
+function keycheck(request: Request, env: any) {
   const updateKey: string = (env as any).UPDATE_KEY;
   if (!updateKey) {
     return new Response(JSON.stringify({ error: "Missing key" }), {
@@ -44,6 +52,14 @@ async function postLinks(request: Request, env: any) {
     return new Response(JSON.stringify({ error: "Incorrect key" }), {
       status: 401,
     });
+  }
+  return null;
+}
+
+async function postLinks(request: Request, env: any) {
+  const keycheckResp = keycheck(request, env);
+  if (keycheckResp) {
+    return keycheckResp;
   }
 
   let links: LinkModel[] = [];
@@ -104,7 +120,11 @@ function validateLinks(links: LinkModel[]): string | null {
   return null;
 }
 
-async function getLinks(_request: Request, env: any) {
+async function getLinks(request: Request, env: any) {
+  const keycheckResp = keycheck(request, env);
+  if (keycheckResp) {
+    return keycheckResp;
+  }
   const links = await getSTARTPAGE(env).get("links");
   if (links) {
     return new Response(links, {
