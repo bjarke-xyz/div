@@ -7,7 +7,7 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "dev": "BROWSER=none wrangler pages dev --kv STARTPAGE --kv KV_VA --binding UPDATE_KEY=1234 --binding --compatibility-date=2023-08-14 --proxy 5173 -- vite"
+    "dev": "BROWSER=none wrangler pages dev --kv STARTPAGE --kv KV_VA --kv FOOD_DAYS --binding UPDATE_KEY=1234 --compatibility-date=2023-08-14 --proxy 5173 -- vite"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -17,27 +17,35 @@
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
     "easy-peasy": "^6.0.2",
+    "lodash": "^4.17.21",
     "milligram": "^1.4.1",
     "oadate": "^0.4.1",
     "react": "^18.2.0",
+    "react-day-picker": "^8.8.2",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.15.0",
+    "swr": "^2.2.2",
     "uuid": "^9.0.0",
     "wrangler": "^3.7.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230904.0",
     "@types/glob": "^8.1.0",
+    "@types/lodash": "^4.14.198",
     "@types/node": "^20.6.0",
     "@types/react": "^18.2.15",
+    "@types/react-day-picker": "^5.3.0",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
+    "autoprefixer": "^10.4.15",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
     "glob": "^10.3.4",
+    "postcss": "^8.4.29",
+    "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
   }
