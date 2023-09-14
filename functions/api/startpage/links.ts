@@ -1,5 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-declare const STARTPAGE: KVNamespace;
+interface Env {
+  STARTPAGE: KVNamespace;
+  UPDATE_KEY: string;
+}
 
 export interface LinkModel {
   type: "link" | "popup";
@@ -11,17 +13,11 @@ export interface LinkModel {
   };
 }
 
-function getSTARTPAGE(env: any): KVNamespace {
-  if (env) {
-    return env.STARTPAGE as KVNamespace;
-  } else {
-    return STARTPAGE;
-  }
+function getSTARTPAGE(env: Env): KVNamespace {
+  return env.STARTPAGE;
 }
 
-export async function onRequest(
-  context: EventContext<unknown, any, Record<string, unknown>>
-): Promise<ReturnType<PagesFunction>> {
+export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   if (request.method === "GET") {
     return getLinks(request, env);
@@ -39,10 +35,10 @@ export async function onRequest(
   return new Response("Not found", {
     status: 404,
   });
-}
+};
 
-function keycheck(request: Request, env: any) {
-  const updateKey: string = (env as any).UPDATE_KEY;
+function keycheck(request: Request, env: Env) {
+  const updateKey: string = env.UPDATE_KEY;
   if (!updateKey) {
     return new Response(JSON.stringify({ error: "Missing key" }), {
       status: 500,
@@ -56,7 +52,7 @@ function keycheck(request: Request, env: any) {
   return null;
 }
 
-async function postLinks(request: Request, env: any) {
+async function postLinks(request: Request, env: Env) {
   const keycheckResp = keycheck(request, env);
   if (keycheckResp) {
     return keycheckResp;
@@ -120,7 +116,7 @@ function validateLinks(links: LinkModel[]): string | null {
   return null;
 }
 
-async function getLinks(request: Request, env: any) {
+async function getLinks(request: Request, env: Env) {
   const keycheckResp = keycheck(request, env);
   if (keycheckResp) {
     return keycheckResp;
