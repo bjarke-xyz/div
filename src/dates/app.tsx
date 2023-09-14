@@ -184,9 +184,8 @@ function OaDates({ useLocalTimezone }: { useLocalTimezone: boolean }) {
 }
 function NaturalDates({ useLocalTimezone }: { useLocalTimezone: boolean }) {
   const parse = async (input: string) => {
-    const apiUrl = import.meta.env.VITE_DATES_API_URL;
     try {
-      const resp = await fetch(`${apiUrl}/naturaldate/parse`, {
+      const resp = await fetch("/api/dates/naturaldate/parse", {
         method: "POST",
         body: JSON.stringify({
           naturalDate: input,
