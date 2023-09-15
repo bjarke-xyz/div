@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && cp src/_redirects dist/",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "dev": "BROWSER=none wrangler pages dev --kv STARTPAGE --kv KV_VA --kv FOOD_DAYS --binding UPDATE_KEY=1234 --compatibility-date=2023-08-14 --proxy 5173 -- vite"
