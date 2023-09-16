@@ -6,16 +6,20 @@ export interface WeatherForecast {
   precipitation: string;
 }
 
-export type WeatherForecastResponse = {
-  tv2: WeatherForecast[];
-  dmi: WeatherForecast[];
-  yr: WeatherForecast[];
-  owm: WeatherForecast[];
+export interface AveragedWeatherForecast extends WeatherForecast {
+  iconUrl: string;
+  entries: WeatherForecast[];
+  lowTemperature: number | null;
+  highTemperature: number | null;
+}
+
+export type WeatherForecastSites<T = unknown> = {
+  tv2: T;
+  dmi: T;
+  yr: T;
+  owm: T;
 };
 
-export type WeatherForecastResponseSingle = {
-  tv2: WeatherForecast;
-  dmi: WeatherForecast;
-  yr: WeatherForecast;
-  owm: WeatherForecast;
-};
+export type WeatherForecastResponse = WeatherForecastSites<WeatherForecast[]>;
+export type WeatherForecastResponseSingle =
+  WeatherForecastSites<WeatherForecast>;

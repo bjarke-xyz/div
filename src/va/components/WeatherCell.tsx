@@ -1,4 +1,8 @@
-import { WeatherForecast, WeatherForecastResponseSingle } from "../types";
+import {
+  WeatherForecast,
+  WeatherForecastResponseSingle,
+  WeatherForecastSites,
+} from "../types";
 
 const Whitespace = ({ site, sites }: { site: string; sites: string[] }) => {
   const getSpaces = () => {
@@ -16,8 +20,8 @@ const Whitespace = ({ site, sites }: { site: string; sites: string[] }) => {
 };
 
 const DescriptionCell = ({ values }: { values: CellValue }) => {
-  const sites = Object.keys(values) as (keyof WeatherForecastResponseSingle)[];
-  const getDescription = (site: keyof WeatherForecastResponseSingle) => {
+  const sites = Object.keys(values) as (keyof WeatherForecastSites)[];
+  const getDescription = (site: keyof WeatherForecastSites) => {
     switch (site) {
       case "dmi":
         return (
@@ -48,7 +52,7 @@ const DescriptionCell = ({ values }: { values: CellValue }) => {
 };
 
 const TemperatureCell = ({ values }: { values: CellValue }) => {
-  const sites = Object.keys(values) as (keyof WeatherForecastResponseSingle)[];
+  const sites = Object.keys(values) as (keyof WeatherForecastSites)[];
   const temperatures = Object.values(values) as number[];
   const max = Math.max(...temperatures);
   const min = Math.min(...temperatures);
@@ -73,7 +77,7 @@ const TemperatureCell = ({ values }: { values: CellValue }) => {
 };
 
 const PrecipitationCell = ({ values }: { values: CellValue }) => {
-  const sites = Object.keys(values) as (keyof WeatherForecastResponseSingle)[];
+  const sites = Object.keys(values) as (keyof WeatherForecastSites)[];
   return (
     <div>
       {sites.map((site, i) => (
@@ -86,13 +90,13 @@ const PrecipitationCell = ({ values }: { values: CellValue }) => {
   );
 };
 
-type CellValue = Record<keyof WeatherForecastResponseSingle, string | number>;
+type CellValue = Record<keyof WeatherForecastSites, string | number>;
 
 export const WeatherCell = ({
   type,
   ...sites
 }: { type: keyof WeatherForecast } & WeatherForecastResponseSingle) => {
-  const keys = Object.keys(sites) as (keyof WeatherForecastResponseSingle)[];
+  const keys = Object.keys(sites) as (keyof WeatherForecastSites)[];
 
   const values = keys.reduce((acc, curr) => {
     if (sites[curr]) {
