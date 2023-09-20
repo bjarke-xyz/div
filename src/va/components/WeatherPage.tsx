@@ -10,10 +10,11 @@ import {
   startOfHour,
 } from "date-fns";
 import { da } from "date-fns/locale";
-import { flatten, max, min, sum } from "lodash";
-import { PropsWithChildren, useRef } from "react";
+import { flatten, max, min, orderBy, sum } from "lodash";
+import { PropsWithChildren, useRef, useState } from "react";
 import { useDraggable } from "react-use-draggable-scroll";
 import useSWR from "swr";
+import Drawer from "react-modern-drawer";
 import { fetcher } from "../../utils/fetcher";
 import {
   AveragedWeatherForecast,
@@ -139,9 +140,6 @@ function getDailyWeather(
     const average = getAverage(entries);
     response.push(average);
   }
-  if (response.length > 10) {
-    response.length = 10;
-  }
   return response;
 }
 
@@ -153,22 +151,25 @@ export const WeatherPage: React.FC<WeatherPageProps> = ({ city }) => {
     `/api/va/weather?city=${city}`,
     fetcher
   );
-  if (isLoading) return <p>Loading...</p>;
   if (error) return <p>error: {error}</p>;
-  if (!data) return <p>no data?</p>;
   const now = new Date();
-  const hourlyWeather = getHourlyWeather(data, now);
-  const dailyWeather = getDailyWeather(data, now);
+  const hourlyWeather = data ? getHourlyWeather(data, now) : [];
+  const dailyWeather = data ? getDailyWeather(data, now) : [];
   return (
     <main className="flex flex-col max-w-lg mt-4 rounded-lg mx-auto text-xl py-4 bg-blue-50">
       <div className="flex flex-col mx-auto items-center">
-        <h1 className="text-3xl">{city}</h1>
-        <div className="text-7xl">{hourlyWeather[0].temperature}°</div>
-        <div className="text-2xl">
-          <span>{hourlyWeather[0].description}</span>
+        <h1 className="text-3xl">{isLoading ? "Loading..." : city}</h1>
+        <div className="text-7xl">
+          {hourlyWeather?.[0]?.temperature ?? "??"}°
         </div>
         <div className="text-2xl">
-          <span>H: 22° L: 13°</span>
+          <span>{hourlyWeather?.[0]?.description ?? "??"}</span>
+        </div>
+        <div className="text-2xl">
+          <span>
+            H: {dailyWeather?.[0]?.highTemperature ?? "??"}° L:{" "}
+            {dailyWeather?.[0]?.lowTemperature ?? "??"}°
+          </span>
         </div>
       </div>
       <HourlyWeatherContainer
@@ -205,18 +206,19 @@ const DailyWeatherContainer: React.FC<DailyWeatherContainerProps> = ({
           className="uppercase"
         />
       </div>
-      <div className="grid mt-4 gap-y-4 grid-cols-5">
-        {weatherForecast.map((wf, i) => (
-          <div key={i} className="contents">
-            <DailyWeather
-              now={now}
-              date={parseISO(wf.timestamp)}
-              lowTemperature={wf.lowTemperature}
-              highTemperature={wf.highTemperature}
-              icon={wf.iconUrl}
-              eachElemClassName="border-b border-blue-50/50 py-2"
-            />
-          </div>
+      <div className="flex flex-col mt-4 gap-y-2 ">
+        {weatherForecast.map((wf) => (
+          <DailyWeather
+            key={wf.timestamp}
+            now={now}
+            date={parseISO(wf.timestamp)}
+            lowTemperature={wf.lowTemperature}
+            highTemperature={wf.highTemperature}
+            icon={wf.iconUrl}
+            // eachElemClassName="border-b border-blue-50/50 py-2"
+            eachElemClassName=""
+            wf={wf}
+          />
         ))}
       </div>
     </WeatherBlock>
@@ -230,6 +232,7 @@ interface DailyWeatherProps {
   highTemperature: number | null;
   icon: string;
   eachElemClassName: string;
+  wf: AveragedWeatherForecast;
 }
 const DailyWeather: React.FC<DailyWeatherProps> = ({
   date,
@@ -238,21 +241,34 @@ const DailyWeather: React.FC<DailyWeatherProps> = ({
   highTemperature,
   icon,
   eachElemClassName,
+  wf,
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const toggleDrawer = () => setIsOpen((prevState) => !prevState);
   const day = isSameDay(date, now)
     ? "I dag"
     : `${format(date, "eee", { locale: da })}`;
   return (
     <>
-      <div className={eachElemClassName}>{day}</div>
-      <div className={eachElemClassName}>
-        <img src={icon} className="min-w-[40px] max-w-[40px]" />
-      </div>
-      <div className={eachElemClassName}>
-        <MutedText text={`${lowTemperature}°`} />
-      </div>
-      <div className={eachElemClassName}>-----</div>
-      <div className={eachElemClassName}>{highTemperature}°</div>
+      <button
+        className="flex flex-row justify-between border-b border-blue-50 p-2 border-opacity-50 hover:bg-blue-300 "
+        onClick={toggleDrawer}
+      >
+        <div className={eachElemClassName}>{day}</div>
+        <div className={eachElemClassName}>
+          <img src={icon} className="min-w-[40px] max-w-[40px]" />
+        </div>
+        <div className={eachElemClassName}>
+          <MutedText text={`${lowTemperature}°`} />
+        </div>
+        <div className={eachElemClassName}>-----</div>
+        <div className={eachElemClassName}>{highTemperature}°</div>
+      </button>
+      <SourcesSummary
+        open={isOpen}
+        onClose={toggleDrawer}
+        weatherForecast={[wf]}
+      />
     </>
   );
 };
@@ -286,6 +302,7 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
           icon={wf.iconUrl}
           temperature={wf.temperature}
           now={now}
+          wf={wf}
         />,
       ];
       if (data?.dates && data?.dates?.length > 0) {
@@ -299,7 +316,11 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
           if (nextWfTimestamp) {
             const wfTimestampDate = parseISO(wf.timestamp);
             if (nextWfTimestampDate) {
-              if (sunrise > wfTimestampDate && sunrise < nextWfTimestampDate) {
+              if (
+                sunrise > now &&
+                sunrise > wfTimestampDate &&
+                sunrise < nextWfTimestampDate
+              ) {
                 elems.push(
                   <HourlyWeather
                     key={sunrise.toISOString()}
@@ -308,9 +329,11 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
                     temperature={wf.temperature}
                     type="sunrise"
                     now={now}
+                    wf={null}
                   />
                 );
               } else if (
+                sunset > now &&
                 sunset > wfTimestampDate &&
                 sunset < nextWfTimestampDate
               ) {
@@ -322,6 +345,7 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
                     temperature={wf.temperature}
                     type="sunset"
                     now={now}
+                    wf={null}
                   />
                 );
               }
@@ -332,9 +356,6 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
       return elems;
     })
   );
-  // if (isLoading) return <p>Loading...</p>;
-  // if (error) return <p>error: {error}</p>;
-  // if (!data) return <p>no data?</p>;
   return (
     <WeatherBlock>
       <div
@@ -354,6 +375,7 @@ interface HourlyWeatherProps {
   temperature: number;
   type?: "sunrise" | "sunset";
   now: Date;
+  wf: AveragedWeatherForecast | null;
 }
 const HourlyWeather: React.FC<HourlyWeatherProps> = ({
   time,
@@ -361,9 +383,12 @@ const HourlyWeather: React.FC<HourlyWeatherProps> = ({
   temperature,
   type,
   now,
+  wf,
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const toggleDrawer = () => setIsOpen((prevState) => !prevState);
   let tempElem = <span>{temperature}°</span>;
-  let iconElem = <img src={icon} className="min-w-[40px]" />;
+  let iconElem = <WeatherIcon url={icon} />;
   switch (type) {
     case "sunrise":
       tempElem = <span>Solopgang</span>;
@@ -380,7 +405,11 @@ const HourlyWeather: React.FC<HourlyWeatherProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <button
+      className="flex flex-col items-center p-2 hover:bg-blue-300 rounded-md"
+      disabled={!wf}
+      onClick={toggleDrawer}
+    >
       <span>
         {isToday(time) && isSameHour(now, time) && !type
           ? "Nu"
@@ -388,8 +417,19 @@ const HourlyWeather: React.FC<HourlyWeatherProps> = ({
       </span>
       {iconElem}
       {tempElem}
-    </div>
+      {wf && (
+        <SourcesSummary
+          open={isOpen}
+          onClose={toggleDrawer}
+          weatherForecast={[wf]}
+        />
+      )}
+    </button>
   );
+};
+
+const WeatherIcon = ({ url }: { url: string }) => {
+  return <img src={url} className="min-w-[40px] max-w-[40px]" />;
 };
 
 const WeatherBlock: React.FC<PropsWithChildren> = ({ children }) => {
@@ -397,5 +437,69 @@ const WeatherBlock: React.FC<PropsWithChildren> = ({ children }) => {
     <div className="flex flex-col rounded-lg bg-blue-400 text-white mt-8 mx-8 p-4">
       {children}
     </div>
+  );
+};
+
+interface SourcesSummaryProps {
+  weatherForecast: AveragedWeatherForecast[];
+  open: boolean;
+  onClose: () => void | undefined;
+}
+const SourcesSummary: React.FC<SourcesSummaryProps> = ({
+  weatherForecast,
+  open,
+  onClose,
+}) => {
+  if (open) {
+    console.log(weatherForecast);
+  }
+  const orderedWeatherForecast = orderBy(
+    weatherForecast.flatMap((x) => x.entries),
+    ["timestamp", "source"]
+  );
+  return (
+    <>
+      <Drawer
+        open={open}
+        onClose={onClose}
+        direction="left"
+        size="80vw"
+        className="h-full overflow-scroll"
+      >
+        <div className="text-black text-lg rounded p-2">
+          <table className="table-auto p-4 bg-white text-center">
+            <thead className="bg-gray-800 text-white">
+              <tr>
+                <th className="w-48">Timestamp</th>
+                <th className="w-12">Source</th>
+                <th className="w-48">Temperature</th>
+                <th className="w-48">Description</th>
+                <th className="w-48">Precipitation</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700">
+              {orderedWeatherForecast.map((wf, i) => (
+                <tr
+                  key={`${wf.timestamp}:${wf.source}`}
+                  className={`${i % 2 === 1 ? "bg-gray-100" : ""} leading-10 `}
+                >
+                  <td>{format(parseISO(wf.timestamp), "MM-dd HH:mm")}</td>
+                  <td>{wf.source}</td>
+                  <td>{wf.temperature}°</td>
+                  <td className="flex justify-center">
+                    {getIconUrl(wf) ? (
+                      <WeatherIcon url={getIconUrl(wf)!} />
+                    ) : (
+                      <span>{wf.description}</span>
+                    )}
+                  </td>
+                  <td>{wf.precipitation}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Drawer>
+    </>
   );
 };
