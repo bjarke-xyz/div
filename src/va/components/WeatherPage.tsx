@@ -200,28 +200,19 @@ const DailyWeatherContainer: React.FC<DailyWeatherContainerProps> = ({
           className="uppercase"
         />
       </div>
-      <div className="flex flex-col divide-y divide-blue-50 divide-opacity-50">
+      <div className="grid mt-4 gap-y-4 grid-cols-5">
         {weatherForecast.map((wf, i) => (
-          <DailyWeather
-            key={i}
-            now={now}
-            date={parseISO(wf.timestamp)}
-            lowTemperature={wf.lowTemperature}
-            highTemperature={wf.highTemperature}
-            icon={wf.iconUrl}
-          />
-        ))}
-        {/* {Array(10)
-          .fill(0)
-          .map((_val, i) => (
+          <div key={i} className="contents">
             <DailyWeather
-              key={i}
               now={now}
-              date={i === 0 ? now : addDays(now, i)}
-              lowTemperature={13}
-              highTemperature={22}
+              date={parseISO(wf.timestamp)}
+              lowTemperature={wf.lowTemperature}
+              highTemperature={wf.highTemperature}
+              icon={wf.iconUrl}
+              eachElemClassName="border-b border-blue-50/50 py-2"
             />
-          ))} */}
+          </div>
+        ))}
       </div>
     </WeatherBlock>
   );
@@ -233,6 +224,7 @@ interface DailyWeatherProps {
   lowTemperature: number | null;
   highTemperature: number | null;
   icon: string;
+  eachElemClassName: string;
 }
 const DailyWeather: React.FC<DailyWeatherProps> = ({
   date,
@@ -240,22 +232,23 @@ const DailyWeather: React.FC<DailyWeatherProps> = ({
   lowTemperature,
   highTemperature,
   icon,
+  eachElemClassName,
 }) => {
   const day = isSameDay(date, now)
     ? "I dag"
     : `${format(date, "eee", { locale: da })}`;
   return (
-    <div className="flex flex-row justify-between py-2">
-      <div>{day}</div>
-      <div>
+    <>
+      <div className={eachElemClassName}>{day}</div>
+      <div className={eachElemClassName}>
         <img src={icon} className="min-w-[40px] max-w-[40px]" />
       </div>
-      <div>
+      <div className={eachElemClassName}>
         <MutedText text={`${lowTemperature}°`} />
       </div>
-      <div>-----</div>
-      <div>{highTemperature}°</div>
-    </div>
+      <div className={eachElemClassName}>-----</div>
+      <div className={eachElemClassName}>{highTemperature}°</div>
+    </>
   );
 };
 
