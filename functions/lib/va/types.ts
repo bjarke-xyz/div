@@ -5,3 +5,11 @@ export interface WeatherForecast {
   temperature: number;
   precipitation: string;
 }
+
+export interface SunData {
+  dates: {
+    date: Date;
+    sunset: Date;
+    sunrise: Date;
+  }[];
+}

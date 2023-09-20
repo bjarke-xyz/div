@@ -23,3 +23,11 @@ export type WeatherForecastSites<T = unknown> = {
 export type WeatherForecastResponse = WeatherForecastSites<WeatherForecast[]>;
 export type WeatherForecastResponseSingle =
   WeatherForecastSites<WeatherForecast>;
+
+export interface SunDataResponse {
+  dates: {
+    date: string;
+    sunset: string;
+    sunrise: string;
+  }[];
+}

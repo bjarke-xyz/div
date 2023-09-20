@@ -1,5 +1,5 @@
 import { load } from "cheerio";
-import { WeatherForecast } from "./types";
+import { SunData, WeatherForecast } from "./types";
 import { parseISO, parse, Locale, setHours } from "date-fns";
 import { da } from "date-fns/locale";
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
@@ -211,6 +211,15 @@ function getYrWeather(html: string): WeatherForecast[] {
 
 interface OwmApiResponse {
   timezone: string;
+  daily: {
+    dt: number;
+    sunrise: number;
+    sunset: number;
+  }[];
+  current: {
+    sunrise: number;
+    sunset: number;
+  };
   hourly: {
     dt: number;
     temp: number;
@@ -250,6 +259,25 @@ function getOwmWeather(json: string): WeatherForecast[] {
   return forecast;
 }
 
+function getSunData(owmJson: string): SunData | null {
+  const data = JSON.parse(owmJson) as OwmApiResponse;
+  if (!data.daily) {
+    return null;
+  }
+  const resp: SunData = { dates: [] };
+  for (const daily of data.daily) {
+    const date = new Date(daily.dt * 1000);
+    const sunrise = new Date(daily.sunrise * 1000);
+    const sunset = new Date(daily.sunset * 1000);
+    resp.dates.push({
+      date,
+      sunset,
+      sunrise,
+    });
+  }
+  return resp;
+}
+
 function parseWithTimeZone(
   dateStr: string,
   formatStr: string,
@@ -270,4 +298,5 @@ export {
   getYrWeather,
   getYrApiWeather,
   getOwmWeather,
+  getSunData,
 };

@@ -10,13 +10,14 @@ import {
   startOfHour,
 } from "date-fns";
 import { da } from "date-fns/locale";
-import { max, min, sum } from "lodash";
+import { flatten, max, min, sum } from "lodash";
 import { PropsWithChildren, useRef } from "react";
 import { useDraggable } from "react-use-draggable-scroll";
 import useSWR from "swr";
 import { fetcher } from "../../utils/fetcher";
 import {
   AveragedWeatherForecast,
+  SunDataResponse,
   WeatherForecast,
   WeatherForecastResponse,
 } from "../types";
@@ -170,7 +171,11 @@ export const WeatherPage: React.FC<WeatherPageProps> = ({ city }) => {
           <span>H: 22° L: 13°</span>
         </div>
       </div>
-      <HourlyWeatherContainer weatherForecast={hourlyWeather} now={now} />
+      <HourlyWeatherContainer
+        weatherForecast={hourlyWeather}
+        now={now}
+        city={city}
+      />
       <DailyWeatherContainer weatherForecast={dailyWeather} now={now} />
     </main>
   );
@@ -255,14 +260,81 @@ const DailyWeather: React.FC<DailyWeatherProps> = ({
 interface HourlyWeatherContainerProps {
   weatherForecast: AveragedWeatherForecast[];
   now: Date;
+  city: string;
 }
 const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
   weatherForecast,
   now,
+  city,
 }) => {
   const ref =
     useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>;
   const { events } = useDraggable(ref);
+  const { data, error } = useSWR<SunDataResponse>(
+    `/api/va/sun?city=${city}&v=3`,
+    fetcher
+  );
+  if (error) {
+    console.log("failed to load sun data", error);
+  }
+  const hourlyWeatherElems: React.ReactElement[] = flatten(
+    weatherForecast.map((wf, i) => {
+      const elems = [
+        <HourlyWeather
+          key={wf.timestamp}
+          time={parseISO(wf.timestamp)}
+          icon={wf.iconUrl}
+          temperature={wf.temperature}
+          now={now}
+        />,
+      ];
+      if (data?.dates && data?.dates?.length > 0) {
+        for (const date of data.dates) {
+          const sunrise = parseISO(date.sunrise);
+          const sunset = parseISO(date.sunset);
+          const nextWfTimestamp = weatherForecast[i + 1]?.timestamp;
+          const nextWfTimestampDate = nextWfTimestamp
+            ? parseISO(nextWfTimestamp)
+            : null;
+          if (nextWfTimestamp) {
+            const wfTimestampDate = parseISO(wf.timestamp);
+            if (nextWfTimestampDate) {
+              if (sunrise > wfTimestampDate && sunrise < nextWfTimestampDate) {
+                elems.push(
+                  <HourlyWeather
+                    key={sunrise.toISOString()}
+                    time={sunrise}
+                    icon="🌅"
+                    temperature={wf.temperature}
+                    type="sunrise"
+                    now={now}
+                  />
+                );
+              } else if (
+                sunset > wfTimestampDate &&
+                sunset < nextWfTimestampDate
+              ) {
+                elems.push(
+                  <HourlyWeather
+                    key={sunset.toISOString()}
+                    time={sunset}
+                    icon="🌇"
+                    temperature={wf.temperature}
+                    type="sunset"
+                    now={now}
+                  />
+                );
+              }
+            }
+          }
+        }
+      }
+      return elems;
+    })
+  );
+  // if (isLoading) return <p>Loading...</p>;
+  // if (error) return <p>error: {error}</p>;
+  // if (!data) return <p>no data?</p>;
   return (
     <WeatherBlock>
       <div
@@ -270,15 +342,7 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
         {...events}
         ref={ref}
       >
-        {weatherForecast.map((wf) => (
-          <HourlyWeather
-            key={wf.timestamp}
-            time={parseISO(wf.timestamp)}
-            icon={wf.iconUrl}
-            temperature={wf.temperature}
-            now={now}
-          />
-        ))}
+        {hourlyWeatherElems}
       </div>
     </WeatherBlock>
   );
@@ -288,7 +352,7 @@ interface HourlyWeatherProps {
   time: Date;
   icon: string;
   temperature: number;
-  type?: "sunrise" | "sundown";
+  type?: "sunrise" | "sunset";
   now: Date;
 }
 const HourlyWeather: React.FC<HourlyWeatherProps> = ({
@@ -303,17 +367,24 @@ const HourlyWeather: React.FC<HourlyWeatherProps> = ({
   switch (type) {
     case "sunrise":
       tempElem = <span>Solopgang</span>;
-      iconElem = <span>🌅</span>;
+      iconElem = <span className="h-[40px]">🌅</span>;
       break;
-    case "sundown":
+    case "sunset":
       tempElem = <span>Solnedgang</span>;
-      iconElem = <span>🌆</span>;
+      iconElem = <span className="h-[40px]">🌆</span>;
       break;
   }
+  let timeFormat = "HH";
+  if (type === "sunset" || type === "sunrise") {
+    timeFormat = "HH:mm";
+  }
+
   return (
     <div className="flex flex-col items-center">
       <span>
-        {isToday(time) && isSameHour(now, time) ? "Nu" : format(time, "HH")}
+        {isToday(time) && isSameHour(now, time) && !type
+          ? "Nu"
+          : format(time, timeFormat)}
       </span>
       {iconElem}
       {tempElem}
