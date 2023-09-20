@@ -20,21 +20,25 @@ export const App = () => {
   if (!cities) return <p>no data?</p>;
   return (
     <div className="flex flex-col items-center">
-      <WeatherPage city={selectedCity!} />
-      <div className="flex flex-row gap-4 mt-4">
-        {cities.map((city) => (
-          <button
-            key={city}
-            title={city}
-            onClick={() => setSelectedCity(city)}
-            className={`${
-              city === selectedCity ? "bg-blue-200" : "bg-blue-50"
-            } h-16 w-16 text-3xl rounded-md hover:bg-blue-200`}
-          >
-            <span>&bull;</span>
-          </button>
-        ))}
-      </div>
+      {selectedCity && (
+        <>
+          <WeatherPage city={selectedCity} />
+          <div className="flex flex-row gap-4 mt-4">
+            {cities.map((city) => (
+              <button
+                key={city}
+                title={city}
+                onClick={() => setSelectedCity(city)}
+                className={`${
+                  city === selectedCity ? "bg-blue-200" : "bg-blue-50"
+                } h-16 w-16 text-3xl rounded-md hover:bg-blue-200`}
+              >
+                <span>&bull;</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
