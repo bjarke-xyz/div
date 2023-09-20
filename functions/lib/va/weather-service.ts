@@ -6,8 +6,9 @@ import {
   getDmiWeather,
   getYrApiWeather,
   getOwmWeather,
+  getSunData,
 } from "./parsers";
-import { WeatherForecast } from "./types";
+import { SunData, WeatherForecast } from "./types";
 
 type Site = "TV2" | "DMI" | "YR" | "OWM";
 type City = "ODENSE" | "AARHUS" | "KØBENHAVN" | "ESBJERG" | "AALBORG";
@@ -80,6 +81,18 @@ async function getJsonData(
     return null;
   }
 }
+
+export const getSunDataHelper = async (
+  cache: VaCache,
+  env: VaEnv,
+  city?: string | null
+): Promise<SunData | null> => {
+  const url = getUrl("OWM", city ?? DEFAULT_CITY, env.OWM_API_KEY);
+  const owmJson = await getJsonData(cache, url);
+  if (!owmJson) return null;
+  const sunData = getSunData(owmJson);
+  return sunData;
+};
 
 export type WeatherServiceFunc = (
   city?: string | null
