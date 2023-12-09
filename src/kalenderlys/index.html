@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <script
+      src="https://cdn.jsdelivr.net/gh/cwilso/volume-meter/volume-meter.js"
+      defer
+    ></script>
+    <script src="script.js" defer></script>
+    <title>Kalenderlys</title>
+    <!-- "borrowed" from https://codepen.io/jsonyeung/pen/BvZmPR :) -->
+  </head>
+  <body>
+    <div id="container">
+      <p id="title">Try blowing out the candle.</p>
+
+      <!-- FLAME -->
+      <canvas id="canvas"></canvas>
+
+      <!-- CANDLE -->
+      <svg
+        id="candle"
+        viewBox="0 0 141.166 136.763"
+        height="516.898"
+        width="533.54"
+      >
+        <defs>
+          <linearGradient id="b">
+            <stop offset="0" stop-color="#321007" />
+            <stop offset=".294" stop-color="#7e4417" />
+            <stop offset=".542" stop-color="#c0752d" />
+            <stop offset="1" stop-color="#f7ef6f" />
+          </linearGradient>
+          <linearGradient id="c">
+            <stop offset="0" stop-color="#bb9c46" stop-opacity=".212" />
+            <stop offset=".222" stop-color="#433819" stop-opacity="0" />
+            <stop offset="1" stop-color="#020201" stop-opacity=".192" />
+          </linearGradient>
+          <linearGradient
+            gradientTransform="matrix(1 0 0 1.27083 0 -42.037)"
+            gradientUnits="userSpaceOnUse"
+            y2="157"
+            x2="325.857"
+            y1="138.104"
+            x1="325.857"
+            id="j"
+            xlink:href="#a"
+          />
+          <linearGradient id="a">
+            <stop offset="0" stop-color="#7e4417" stop-opacity="0" />
+            <stop offset="1" stop-color="#220404" />
+          </linearGradient>
+          <radialGradient
+            xlink:href="#b"
+            id="h"
+            cx="322.264"
+            cy="150.306"
+            fx="322.264"
+            fy="150.306"
+            r="25.495"
+            gradientTransform="matrix(8.6617 0 0 2.52296 -2469.086 -221.95)"
+            gradientUnits="userSpaceOnUse"
+          />
+          <radialGradient
+            xlink:href="#c"
+            id="i"
+            cx="1330.067"
+            cy="1011.201"
+            fx="1329.597"
+            fy="991.312"
+            r="65.761"
+            gradientTransform="matrix(.40238 -.0005 .00014 .11177 -213.295 -9.579)"
+            gradientUnits="userSpaceOnUse"
+          />
+          <radialGradient
+            xlink:href="#d"
+            id="g"
+            cx="321.813"
+            cy="87.115"
+            fx="321.813"
+            fy="87.115"
+            r="43.354"
+            gradientTransform="matrix(1.0667 0 0 1.0667 -194.42 43.2)"
+            gradientUnits="userSpaceOnUse"
+          />
+          <linearGradient id="d">
+            <stop offset="0" stop-color="#58450a" />
+            <stop offset="1" stop-color="#58450a" stop-opacity="0" />
+          </linearGradient>
+          <radialGradient
+            xlink:href="#d"
+            id="e"
+            cx="321.813"
+            cy="87.115"
+            fx="321.813"
+            fy="87.115"
+            r="28.999"
+            gradientTransform="translate(-170.83 66.743)"
+            gradientUnits="userSpaceOnUse"
+          />
+          <radialGradient
+            xlink:href="#d"
+            id="f"
+            cx="321.813"
+            cy="87.115"
+            fx="321.813"
+            fy="87.115"
+            r="59.505"
+            gradientTransform="matrix(1.18617 0 0 1.09185 -232.869 39.512)"
+            gradientUnits="userSpaceOnUse"
+          />
+        </defs>
+        <g transform="translate(-78.274 -69.658)">
+          <ellipse
+            cx="148.857"
+            cy="134.629"
+            rx="70.583"
+            ry="64.97"
+            fill="url(#f)"
+            paint-order="stroke fill markers"
+          />
+          <ellipse
+            ry="46.246"
+            rx="46.246"
+            cy="136.125"
+            cx="148.857"
+            opacity=".149"
+            fill="url(#g)"
+            paint-order="stroke fill markers"
+          />
+          <g transform="translate(-172.956 49.01)">
+            <path
+              d="M321.421 92.595c-.63 0-1.23.014-1.818.034-13.035.363-22.33 3.516-23.017 8.509-.73 5.299-.09 12.27-.022 18.442l.466 37.363h49.407l.466-37.363c.077-6.172.708-13.143-.022-18.442-.688-4.993-9.982-8.146-23.017-8.509a51.726 51.726 0 0 0-1.818-.034l-.313.002-.312-.002z"
+              fill="url(#h)"
+              paint-order="stroke fill markers"
+            />
+            <path
+              d="M303.332 104.585s-1.042-.75-1.601-.251c-.56.499.173.971.173.971 4.559 2.327 11.72 3.6 19.29 3.602a65.665 65.665 0 0 0 4.141-.133s.575-.061.549-.586c-.026-.525-.83-.477-.83-.477-.972.044-1.949.074-2.929.074-7.27-.002-14.001-1.109-18.793-3.2zM342.298 103.62c-2.599 1.555-4.753 2.376-7.198 2.833 0 0-1.231-.034-1.396.697-.165.731.701.692.701.692 2.892-.409 6.667-1.573 8.635-3.223.323-.187.446-.602.234-.887-.211-.286-.72-.26-.976-.111z"
+              fill="#fdfada"
+              fill-opacity=".278"
+              paint-order="stroke fill markers"
+            />
+            <ellipse
+              cx="322.045"
+              cy="101.359"
+              rx="21.673"
+              ry="6.409"
+              fill="#daaa49"
+              paint-order="stroke fill markers"
+            />
+            <ellipse
+              cx="322.045"
+              cy="102.748"
+              rx="16.043"
+              ry="3.974"
+              fill="#e9dc94"
+              fill-opacity=".427"
+              paint-order="stroke fill markers"
+            />
+            <path
+              d="M322.045 94.95c-11.97 0-21.673 2.87-21.673 6.41.007.517.228 1.033.655 1.535 2.381-3.21 11.054-5.119 21.018-5.123 9.96.004 18.63 1.91 21.018 5.118.426-.5.646-1.015.655-1.53 0-3.54-9.703-6.41-21.673-6.41z"
+              fill="url(#i)"
+              paint-order="stroke fill markers"
+            />
+            <path
+              fill="url(#j)"
+              paint-order="stroke fill markers"
+              d="M297.03 132.83h49.407v24.581H297.03z"
+            />
+            <ellipse
+              ry="2.844"
+              rx="10.578"
+              cy="102.748"
+              cx="322.045"
+              fill="#e9dc94"
+              fill-opacity=".427"
+              paint-order="stroke fill markers"
+            />
+            <path
+              d="M323.91 101.848c.115 1.828-2.09 1.471-2.879 1.46-.083-.002-.159-.007-.241-.01 1.746 1.43 5.034-.104 3.12-1.45z"
+              fill="#ac7736"
+              fill-opacity=".525"
+              paint-order="stroke fill markers"
+            />
+            <path
+              d="M322.045 94.285c.483 0 .85.493.871 1.105l.234 6.799c.021.612-.493.824-1.105.824s-1.126-.212-1.105-.824l.234-6.8c.021-.611.389-1.104.871-1.104z"
+              fill="#181818"
+              paint-order="stroke fill markers"
+            />
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- FILTER -->
+    <svg id="filter">
+      <defs>
+        <filter id="blur">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.05" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9"
+            result="goo"
+          />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+  </body>
+</html>
