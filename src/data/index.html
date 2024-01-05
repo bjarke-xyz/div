@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data</title>
+  </head>
+  <body>
+    <h1>Hash Data</h1>
+    <form id="form" onsubmit="return onLoadClicked(event)">
+      <input type="file" name="file" />
+      <button type="submit">Load</button>
+    </form>
+    <div id="data-container">...</div>
+    <script defer>
+      function makeHash(contentType, encoding, content) {
+        return `${btoa(contentType)}|${btoa(encoding ?? "")}|${content}`;
+      }
+      function parseHash() {
+        const hash = window.location.hash.slice(1);
+        if (!hash) {
+          return { success: false };
+        }
+        const hashParts = hash.split("|");
+        if (hashParts.length < 3) {
+          return { success: false };
+        }
+        console.log(hashParts);
+        const contentType = atob(hashParts[0]);
+        const encoding = atob(hashParts[1] ?? "");
+        const content = hashParts[2];
+        return { success: true, contentType, encoding, content };
+      }
+
+      function makeHashHtml(contentType, encoding, content) {
+        const dataContainer = document.getElementById("data-container");
+        if (contentType?.startsWith("image")) {
+          const imgTag = document.createElement("img");
+          imgTag.setAttribute("src", `data:${contentType};base64,${content}`);
+          dataContainer.replaceChildren(imgTag);
+        }
+      }
+
+      async function onLoadClicked(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const file = formData.get("file");
+        if (!file) {
+          return;
+        }
+        const contentType = file.type;
+        const blob = new Blob([file], { type: file.type });
+        console.log(contentType, blob);
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onerror = (ev) => {
+          console.log("failed to load", ev);
+        };
+        reader.onloadend = () => {
+          const base64string = reader.result;
+          const base64stringWithoutTags = base64string.substr(
+            base64string.indexOf(",") + 1
+          );
+          console.log(base64stringWithoutTags);
+          const newHash = makeHash(contentType, null, base64stringWithoutTags);
+          window.location.hash = newHash;
+          window.location.reload();
+        };
+      }
+
+      const { success, contentType, encoding, content } = parseHash();
+      if (success) {
+        document.getElementById("form").style.visibility = "hidden";
+        makeHashHtml(contentType, encoding, content);
+      }
+    </script>
+  </body>
+</html>

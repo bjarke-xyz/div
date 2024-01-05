@@ -4,6 +4,7 @@ const sites = [
   "/startpage/",
   "/va/",
   "/food-days/",
+  "/data",
 ];
 function App() {
   const pathname = window.location.pathname;
