@@ -4,7 +4,7 @@ const sites = [
   "/startpage/",
   "/va/",
   "/food-days/",
-  "/data",
+  "/hash-data/",
 ];
 function App() {
   const pathname = window.location.pathname;
@@ -21,13 +21,13 @@ function App() {
   return (
     <>
       <h1>div</h1>
-      <li>
+      <ul>
         {sites.map((site) => (
-          <ul>
+          <li>
             <a href={site}>{site}</a>
-          </ul>
+          </li>
         ))}
-      </li>
+      </ul>
     </>
   );
 }
