@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { WeatherPage } from "./components/WeatherPage";
-import { fetcher } from "../utils/fetcher";
+import { fetcher } from "../lib/fetcher";
 import { useEffect, useState } from "react";
 
 export const App = () => {

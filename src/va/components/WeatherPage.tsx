@@ -15,7 +15,7 @@ import { PropsWithChildren, useRef, useState } from "react";
 import { useDraggable } from "react-use-draggable-scroll";
 import useSWR from "swr";
 import Drawer from "react-modern-drawer";
-import { fetcher } from "../../utils/fetcher";
+import { fetcher } from "../../lib/fetcher";
 import {
   AveragedWeatherForecast,
   SunDataResponse,
