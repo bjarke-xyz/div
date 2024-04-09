@@ -5,6 +5,7 @@ const sites = [
   "/va/",
   "/food-days/",
   "/hash-data/",
+  "/map/"
 ];
 function App() {
   const pathname = window.location.pathname;

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet tester</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<style>
+    .container {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+    }
+
+    #map {
+        height: 99vh;
+        flex-basis: 66.66%;
+    }
+
+    #input {
+        flex-basis: 33.33%;
+    }
+
+    #url {
+        word-wrap: break-word;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div id="map"></div>
+        <div #id="input">
+            <form action="" onsubmit="return onSubmit()">
+                <div>
+                    <h3>Map</h3>
+                    <div>
+                        <label for="center-input">
+                            Center
+                            <input id="center-input" value="55.675997, 12.568811" />
+                        </label>
+                    </div>
+                    <label for="show-center-input">
+                        Show center marker
+                        <input id="show-center-input" checked type="checkbox">
+                    </label>
+                    <div>
+                        <label for="zoom-input">
+                            <input id="zoom-input" value="13" type="number">
+                        </label>
+                    </div>
+                </div>
+
+
+                <h3>Markers</h3>
+                <p>Format: label (optional), lat, lon</p>
+                <textarea cols="55" rows="40" id="markers-input"></textarea>
+
+                <div>
+                    <button type="submit">Submit</button>
+                </div>
+            </form>
+            <br>
+            <br>
+            <div>
+                URL: <a id="url"></a>
+            </div>
+
+            <br>
+            <br>
+            <div>
+                Current mouse: <span id="mouse-location"></span>
+            </div>
+            <div>
+                Current zoom: <span id="zoom"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map = null;
+        let markers = [];
+
+        const queryParams = new URLSearchParams(window.location.search);
+        for (const [key, val] of queryParams) {
+            const keyParts = key.split("|")
+            const elem = document.getElementById(keyParts[0]);
+            if (elem) {
+                if (keyParts[1]) {
+                    if (elem.tagName === "INPUT" && keyParts[1] === "checked") {
+                        if (val?.toLowerCase() === "true") {
+                            elem.setAttribute(keyParts[1], val);
+                        } else {
+                            elem.removeAttribute(keyParts[1]);
+                        }
+                    } else {
+                        elem[keyParts[1]] = val
+                    }
+                } else {
+                    elem.value = val;
+                }
+            }
+        }
+
+
+
+        function setMap() {
+            if (map) {
+                map.off();
+                map.remove();
+                map = null;
+                markers = [];
+            }
+            let [centerLat, centerLon] = document.getElementById("center-input").value?.split(",").map(x => Number(x));
+            const initialZoomLevel = Number(document.getElementById('zoom-input').value)
+            map = L.map('map').setView([centerLat, centerLon], initialZoomLevel);
+
+            const mouseLocation = document.getElementById("mouse-location");
+            map.on('mousemove', (e) => {
+                mouseLocation.innerText = `${e.latlng.lat}, ${e.latlng.lng}`;
+            })
+            const zoomSpan = document.getElementById('zoom');
+            zoomSpan.innerText = map.getZoom();
+            map.on('zoom', e => {
+                zoomSpan.innerText = map.getZoom();
+            })
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            const showCenter = document.getElementById('show-center-input');
+            if (showCenter.checked) {
+                let centerMarker = L.marker([centerLat, centerLon]).addTo(map);
+            }
+
+            const markersText = document.getElementById('markers-input').value;
+            if (markersText) {
+                const lines = markersText.split("\n").filter(x => !!x);
+                for (const line of lines) {
+                    const parts = line.split(",");
+                    let label = "";
+                    let lat = null;
+                    let lon = null;
+                    if (parts.length >= 3) {
+                        label = parts[0];
+                        lat = Number(parts[1]);
+                        lon = Number(parts[2]);
+                    } else if (parts.length >= 2) {
+                        lat = Number(parts[0]);
+                        lon = Number(parts[1]);
+                    }
+                    if (lat && lon) {
+                        let marker = L.marker([lat, lon]);
+                        if (label) {
+                            marker = marker.bindTooltip(label, { permanent: true, direction: 'bottom', offset: L.point(-15, 30) })
+                        }
+                        marker = marker.addTo(map);
+                        markers.push(marker)
+                    }
+                }
+            }
+
+            setUrl()
+        }
+
+        function onSubmit() {
+            setMap();
+            return false;
+        }
+
+        function setUrl() {
+            const searchParams = new URLSearchParams();
+            const showCenter = document.getElementById('show-center-input').checked;
+            searchParams.append('show-center-input|checked', showCenter.toString());
+
+            const centerLocation = document.getElementById('center-input').value;
+            searchParams.append('center-input', centerLocation);
+
+            const zoomLevel = document.getElementById('zoom-input').value;
+            searchParams.append('zoom-input', zoomLevel)
+
+            const markersStr = document.getElementById('markers-input').value;
+            searchParams.append('markers-input', markersStr)
+
+            console.log(searchParams.toString())
+            const currentUrl = new URL(window.location.toString());
+            currentUrl.search = searchParams.toString()
+            const urlElem = document.getElementById('url');
+            urlElem.href = currentUrl.toString();
+            urlElem.innerText = currentUrl.toString().substring(0, 50) + '...';
+        }
+
+        setMap();
+
+    </script>
+</body>
+
+</html>
