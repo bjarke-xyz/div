@@ -31,16 +31,16 @@ export const cityUrls = {
   },
   OWM: {
     ODENSE:
-      "https://api.openweathermap.org/data/2.5/onecall?lat=55.3959&lon=10.3883&exclude=minutely&units=metric",
+      "https://api.openweathermap.org/data/2.5/forecast?lat=55.3959&lon=10.3883&exclude=minutely&units=metric",
     AARHUS:
-      "https://api.openweathermap.org/data/2.5/onecall?lat=56.1567&lon=10.2108&exclude=minutely&units=metric",
+      "https://api.openweathermap.org/data/2.5/forecast?lat=56.1567&lon=10.2108&exclude=minutely&units=metric",
     KØBENHAVN:
-      "https://api.openweathermap.org/data/2.5/onecall?lat=55.6759&lon=12.5655&exclude=minutely&units=metric",
+      "https://api.openweathermap.org/data/2.5/forecast?lat=55.6759&lon=12.5655&exclude=minutely&units=metric",
     ESBJERG:
-      "https://api.openweathermap.org/data/2.5/onecall?lat=55.4667&lon=8.45&exclude=minutely&units=metric",
+      "https://api.openweathermap.org/data/2.5/forecast?lat=55.4667&lon=8.45&exclude=minutely&units=metric",
     AALBORG:
-      "https://api.openweathermap.org/data/2.5/onecall?lat=57.048&lon=9.9187&exclude=minutely&units=metric",
+      "https://api.openweathermap.org/data/2.5/forecast?lat=57.048&lon=9.9187&exclude=minutely&units=metric",
     SVENDBORG:
-      "https://api.openweathermap.org/data/2.5/onecall?lat=55.0598&lon=10.6068&exclude=minutely&units=metric",
+      "https://api.openweathermap.org/data/2.5/forecast?lat=55.0598&lon=10.6068&exclude=minutely&units=metric",
   },
 };

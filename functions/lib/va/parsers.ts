@@ -1,6 +1,6 @@
 import { load } from "cheerio";
 import { SunData, WeatherForecast } from "./types";
-import { parseISO, parse, Locale, setHours } from "date-fns";
+import { parseISO, parse, Locale, setHours, addHours, addDays } from "date-fns";
 import { da } from "date-fns/locale";
 import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 
@@ -210,46 +210,59 @@ function getYrWeather(html: string): WeatherForecast[] {
 }
 
 interface OwmApiResponse {
-  timezone: string;
-  daily: {
+  list: {
     dt: number;
-    sunrise: number;
-    sunset: number;
-  }[];
-  current: {
-    sunrise: number;
-    sunset: number;
-  };
-  hourly: {
-    dt: number;
-    temp: number;
+    main: {
+      temp: number;
+    };
     weather: {
       main: string;
       description: string;
     }[];
     rain: {
-      "1h": string;
+      "3h": string;
     };
   }[];
+  city: {
+    sunrise: number;
+    sunset: number;
+  }
 }
 function getOwmWeather(json: string): WeatherForecast[] {
   const source = "OWM";
   const forecast: WeatherForecast[] = [];
   const data = JSON.parse(json) as OwmApiResponse;
 
-  for (const point of data.hourly) {
+  for (const point of data.list) {
     const timestamp = new Date(point.dt * 1000);
     if (isNaN(timestamp.getTime())) {
       throw new Error(`invalid timestamp (owm): ${point.dt}`);
     }
     const description = point.weather[0]?.description;
-    const temperature = Math.round(point.temp);
-    const rain = point.rain?.["1h"];
+    const temperature = Math.round(point.main.temp);
+    const rain = point.rain?.["3h"];
     const precipitation = rain ? `${rain} mm` : `0 mm`;
+
 
     forecast.push({
       source,
       timestamp,
+      description,
+      temperature,
+      precipitation,
+    });
+
+    // Fake next two hours, because the free OWM api call only returns data for three hour intervals
+    forecast.push({
+      source,
+      timestamp: addHours(timestamp, 1),
+      description,
+      temperature,
+      precipitation,
+    });
+    forecast.push({
+      source,
+      timestamp: addHours(timestamp, 2),
       description,
       temperature,
       precipitation,
@@ -261,16 +274,17 @@ function getOwmWeather(json: string): WeatherForecast[] {
 
 function getSunData(owmJson: string): SunData | null {
   const data = JSON.parse(owmJson) as OwmApiResponse;
-  if (!data.daily) {
+  if (!data.city) {
     return null;
   }
   const resp: SunData = { dates: [] };
-  for (const daily of data.daily) {
-    const date = new Date(daily.dt * 1000);
-    const sunrise = new Date(daily.sunrise * 1000);
-    const sunset = new Date(daily.sunset * 1000);
+  const now = new Date();
+  const endDate = addDays(now, 5);
+  for (let d = now; d < endDate; d = addDays(d, 1)) {
+    const sunrise = new Date(data.city.sunrise * 1000);
+    const sunset = new Date(data.city.sunset * 1000);
     resp.dates.push({
-      date,
+      date: d,
       sunset,
       sunrise,
     });
