@@ -149,7 +149,7 @@ export const createWeatherService = ({
         const forecast = getOwmWeather(data);
         return forecast;
       } catch (error) {
-        console.log("Error getting OWM data");
+        console.log("Error getting OWM data", error);
         return null;
       }
     },
