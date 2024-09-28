@@ -279,12 +279,12 @@ function getSunData(owmJson: string): SunData | null {
   }
   const resp: SunData = { dates: [] };
   const now = new Date();
-  const endDate = addDays(now, 5);
-  for (let d = now; d < endDate; d = addDays(d, 1)) {
-    const sunrise = new Date(data.city.sunrise * 1000);
-    const sunset = new Date(data.city.sunset * 1000);
+  for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
+    const date = addDays(now, dayOffset);
+    const sunrise = addDays(new Date(data.city.sunrise * 1000), dayOffset);
+    const sunset = addDays(new Date(data.city.sunset * 1000), dayOffset);
     resp.dates.push({
-      date: d,
+      date,
       sunset,
       sunrise,
     });
