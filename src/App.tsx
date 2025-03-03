@@ -1,11 +1,10 @@
 const sites = [
   "/dates/",
   "/timetracker/",
-  "/startpage/",
   "/va/",
   "/food-days/",
   "/hash-data/",
-  "/map/"
+  "/map/",
 ];
 function App() {
   const pathname = window.location.pathname;
