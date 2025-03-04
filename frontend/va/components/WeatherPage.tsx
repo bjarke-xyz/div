@@ -47,7 +47,7 @@ function getIconUrl(entry: WeatherForecast | null): string | null {
   if (!entry) return null;
   switch (entry.source.toLowerCase()) {
     case "dmi":
-      return `/api/va/proxy/dmi/symbol/${entry.description}`;
+      return `/api/va/proxy/dmi/symbol/${entry.description}/icon.svg`;
     case "yr":
       return `/va/img/yr/${entry.description}.png`;
     default:

@@ -54,7 +54,7 @@ vaApi.get("/weather", async (c) => {
   return c.json(weatherForecastResponse);
 });
 
-vaApi.get("/proxy/dmi/symbol/:id", async (c) => {
+vaApi.get("/proxy/dmi/symbol/:id/icon.svg", async (c) => {
   const CACHE_TIME_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days
   // TODO: caching
   const id = c.req.param("id");
