@@ -11,11 +11,12 @@ interface VaCacheObj {
 }
 
 export class VaCache {
-  private readonly keyPrefix = "CACHE:";
+  private readonly keyPrefix = "VA/CACHE";
   constructor(private readonly env: Env) {}
 
   private getKey(key: string) {
-    return `${this.keyPrefix}:${key}`;
+    const keyFormatted = key.replace(/[<>:"/\\|?*]/g, "_");
+    return `${this.keyPrefix}/${keyFormatted}`;
   }
   async set(key: string, value: string, ttl: number): Promise<unknown> {
     const s3 = getS3(this.env);
