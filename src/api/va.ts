@@ -78,7 +78,7 @@ vaApi.get("/proxy/dmi/symbol/:id/icon.svg", async (c) => {
   }
 });
 
-vaApi.get("/cache-refresh", async (c) => {
+vaApi.post("/cache-refresh", async (c) => {
   const env = getEnv();
   const cities = Object.keys(cityUrls.DMI);
   const cache = new VaCache(env);
@@ -91,5 +91,5 @@ vaApi.get("/cache-refresh", async (c) => {
     promises.push(...sitePromises);
   }
   await Promise.all(promises);
-  c.status(202);
+  return c.json({ msg: "success" });
 });
