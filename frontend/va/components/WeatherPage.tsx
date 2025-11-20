@@ -10,7 +10,7 @@ import {
   startOfHour,
 } from "date-fns";
 import { da } from "date-fns/locale";
-import { flatten, max, min, orderBy, sum } from "lodash";
+import { flatten, max, mean, min, orderBy, sum } from "lodash";
 import { PropsWithChildren, useRef, useState } from "react";
 import Drawer from "react-modern-drawer";
 import { useDraggable } from "react-use-draggable-scroll";
@@ -22,6 +22,39 @@ import {
   WeatherForecast,
   WeatherForecastResponse,
 } from "../types";
+
+// Source color mapping
+const SOURCE_COLORS = {
+  tv2: { bg: "bg-blue-500", text: "text-blue-500", border: "border-blue-500", name: "TV2" },
+  dmi: { bg: "bg-green-500", text: "text-green-500", border: "border-green-500", name: "DMI" },
+  yr: { bg: "bg-purple-500", text: "text-purple-500", border: "border-purple-500", name: "YR" },
+  owm: { bg: "bg-orange-500", text: "text-orange-500", border: "border-orange-500", name: "OWM" },
+} as const;
+
+type SourceKey = keyof typeof SOURCE_COLORS;
+
+// Calculate consensus level based on temperature variance
+function calculateConsensus(temperatures: number[]): {
+  level: "high" | "medium" | "low";
+  variance: number;
+  color: string;
+} {
+  if (temperatures.length < 2) {
+    return { level: "high", variance: 0, color: "text-green-500" };
+  }
+  const avg = mean(temperatures);
+  const variance = Math.sqrt(
+    sum(temperatures.map((t) => Math.pow(t - avg, 2))) / temperatures.length
+  );
+
+  if (variance < 2) {
+    return { level: "high", variance, color: "text-green-500" };
+  } else if (variance < 4) {
+    return { level: "medium", variance, color: "text-yellow-500" };
+  } else {
+    return { level: "low", variance, color: "text-red-500" };
+  }
+}
 
 function getShortestDataSet(
   weatherForecast: WeatherForecastResponse
@@ -155,23 +188,71 @@ export const WeatherPage: React.FC<WeatherPageProps> = ({ city }) => {
   const now = new Date();
   const hourlyWeather = data ? getHourlyWeather(data, now) : [];
   const dailyWeather = data ? getDailyWeather(data, now) : [];
+
+  // Get current weather from all sources
+  const currentFromSources = hourlyWeather?.[0]?.entries ?? [];
+  const currentTemp = hourlyWeather?.[0]?.temperature;
+  const currentDescription = hourlyWeather?.[0]?.description;
+
   return (
-    <main className="flex flex-col max-w-lg mt-4 rounded-lg mx-auto text-xl py-4 bg-blue-50">
-      <div className="flex flex-col mx-auto items-center">
-        <h1 className="text-3xl">{isLoading ? "Loading..." : city}</h1>
-        <div className="text-7xl">
-          {hourlyWeather?.[0]?.temperature ?? "??"}°
+    <main className="flex flex-col max-w-4xl mt-4 rounded-lg mx-auto text-xl py-8 bg-gradient-to-br from-slate-50 to-slate-100">
+      <h1 className="text-4xl font-bold text-center mb-8 text-slate-800">
+        {isLoading ? "Loading..." : city}
+      </h1>
+
+      {/* Hero Section with Source Comparison */}
+      <div className="flex flex-col items-center mb-8 px-8">
+        {/* Grid layout with center and sources */}
+        <div className="grid grid-cols-3 gap-6 items-center mb-8 w-full max-w-2xl">
+          {/* Top source */}
+          {currentFromSources[0] && (
+            <div className="col-start-2 flex justify-center">
+              <SourceCard source={currentFromSources[0]} />
+            </div>
+          )}
+
+          {/* Left source */}
+          {currentFromSources[3] && (
+            <div className="row-start-2 col-start-1 flex justify-end">
+              <SourceCard source={currentFromSources[3]} />
+            </div>
+          )}
+
+          {/* Center - Average temperature */}
+          <div className="row-start-2 col-start-2 flex flex-col items-center bg-white rounded-2xl shadow-xl p-8 border-4 border-slate-300">
+            <div className="text-7xl font-bold text-slate-800">
+              {currentTemp ?? "??"}°
+            </div>
+            <div className="text-sm text-slate-500 uppercase tracking-wide mt-2">Gennemsnit</div>
+          </div>
+
+          {/* Right source */}
+          {currentFromSources[1] && (
+            <div className="row-start-2 col-start-3 flex justify-start">
+              <SourceCard source={currentFromSources[1]} />
+            </div>
+          )}
+
+          {/* Bottom source */}
+          {currentFromSources[2] && (
+            <div className="row-start-3 col-start-2 flex justify-center">
+              <SourceCard source={currentFromSources[2]} />
+            </div>
+          )}
         </div>
-        <div className="text-2xl">
-          <span>{hourlyWeather?.[0]?.description ?? "??"}</span>
-        </div>
-        <div className="text-2xl">
-          <span>
-            H: {dailyWeather?.[0]?.highTemperature ?? "??"}° L:{" "}
-            {dailyWeather?.[0]?.lowTemperature ?? "??"}°
-          </span>
+
+        <div className="text-xl text-slate-700 mb-2">{currentDescription}</div>
+
+        {/* Consensus Indicator */}
+        <ConsensusIndicator entries={currentFromSources} />
+
+        <div className="text-lg text-slate-600 mt-4">
+          <span>H: {dailyWeather?.[0]?.highTemperature ?? "??"}°</span>
+          <span className="mx-2">•</span>
+          <span>L: {dailyWeather?.[0]?.lowTemperature ?? "??"}°</span>
         </div>
       </div>
+
       <HourlyWeatherContainer
         weatherForecast={hourlyWeather}
         now={now}
@@ -182,11 +263,51 @@ export const WeatherPage: React.FC<WeatherPageProps> = ({ city }) => {
   );
 };
 
-const MutedText: React.FC<{ text: string; className?: string }> = ({
-  text,
-  className,
-}) => {
-  return <span className={`text-blue-100 ${className}`}>{text}</span>;
+// Component to show individual source card
+const SourceCard: React.FC<{ source: WeatherForecast }> = ({ source }) => {
+  const sourceKey = source.source.toLowerCase() as SourceKey;
+  const colors = SOURCE_COLORS[sourceKey];
+
+  return (
+    <div className={`flex flex-col items-center bg-white rounded-xl shadow-md p-4 border-2 ${colors.border}`}>
+      <div className={`text-2xl font-bold ${colors.text}`}>
+        {source.temperature}°
+      </div>
+      <div className="text-xs text-slate-500 uppercase tracking-wide mt-1">
+        {colors.name}
+      </div>
+    </div>
+  );
+};
+
+// Consensus indicator component
+const ConsensusIndicator: React.FC<{ entries: WeatherForecast[] }> = ({ entries }) => {
+  const temperatures = entries.map((e) => e.temperature);
+  const consensus = calculateConsensus(temperatures);
+
+  const labels = {
+    high: "Høj enighed",
+    medium: "Moderat enighed",
+    low: "Lav enighed",
+  };
+
+  const icons = {
+    high: "✓",
+    medium: "~",
+    low: "!",
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className={`font-bold ${consensus.color}`}>
+        {icons[consensus.level]}
+      </span>
+      <span className="text-slate-600">{labels[consensus.level]}</span>
+      <span className="text-slate-400 text-xs">
+        (±{consensus.variance.toFixed(1)}°)
+      </span>
+    </div>
+  );
 };
 
 interface DailyWeatherContainerProps {
@@ -199,14 +320,13 @@ const DailyWeatherContainer: React.FC<DailyWeatherContainerProps> = ({
 }) => {
   return (
     <WeatherBlock>
-      <div className="flex">
-        <span className="mr-1">📆</span>
-        <MutedText
-          text={`Vejrudsigt for de næste ${weatherForecast.length} dage`}
-          className="uppercase"
-        />
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">📆</span>
+        <h2 className="text-lg font-semibold text-slate-700">
+          Vejrudsigt for de næste {weatherForecast.length} dage
+        </h2>
       </div>
-      <div className="flex flex-col mt-4 gap-y-2 ">
+      <div className="flex flex-col gap-y-3">
         {weatherForecast.map((wf) => (
           <DailyWeather
             key={wf.timestamp}
@@ -215,8 +335,6 @@ const DailyWeatherContainer: React.FC<DailyWeatherContainerProps> = ({
             lowTemperature={wf.lowTemperature}
             highTemperature={wf.highTemperature}
             icon={wf.iconUrl}
-            // eachElemClassName="border-b border-blue-50/50 py-2"
-            eachElemClassName=""
             wf={wf}
           />
         ))}
@@ -231,7 +349,6 @@ interface DailyWeatherProps {
   lowTemperature: number | null;
   highTemperature: number | null;
   icon: string;
-  eachElemClassName: string;
   wf: AveragedWeatherForecast;
 }
 const DailyWeather: React.FC<DailyWeatherProps> = ({
@@ -240,29 +357,87 @@ const DailyWeather: React.FC<DailyWeatherProps> = ({
   lowTemperature,
   highTemperature,
   icon,
-  eachElemClassName,
   wf,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleDrawer = () => setIsOpen((prevState) => !prevState);
   const day = isSameDay(date, now)
     ? "I dag"
-    : `${format(date, "eee", { locale: da })}`;
+    : format(date, "eeee", { locale: da });
+
+  // Group entries by source to get min/max for each
+  const sourceRanges: Record<string, { min: number; max: number }> = {};
+  wf.entries.forEach((entry) => {
+    const source = entry.source.toLowerCase();
+    if (!sourceRanges[source]) {
+      sourceRanges[source] = { min: entry.temperature, max: entry.temperature };
+    } else {
+      sourceRanges[source].min = Math.min(sourceRanges[source].min, entry.temperature);
+      sourceRanges[source].max = Math.max(sourceRanges[source].max, entry.temperature);
+    }
+  });
+
+  // Calculate global min/max for scaling
+  const allTemps = Object.values(sourceRanges).flatMap((r) => [r.min, r.max]);
+  const globalMin = Math.min(...allTemps);
+  const globalMax = Math.max(...allTemps);
+  const tempRange = globalMax - globalMin || 10;
+
+  const consensus = calculateConsensus(wf.entries.map((e) => e.temperature));
+
   return (
     <>
       <button
-        className="flex flex-row justify-between border-b border-blue-50 p-2 border-opacity-50 hover:bg-blue-300 "
+        className="flex flex-col p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
         onClick={toggleDrawer}
       >
-        <div className={eachElemClassName}>{day}</div>
-        <div className={eachElemClassName}>
-          <img src={icon} className="min-w-[40px] max-w-[40px]" />
+        {/* Top row: Day, Icon, Temps */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="font-semibold text-slate-800 min-w-[100px] capitalize">
+              {day}
+            </span>
+            <img src={icon} className="min-w-[40px] max-w-[40px]" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`text-xs ${consensus.color}`}>
+              {consensus.level === "high" ? "✓" : consensus.level === "medium" ? "~" : "!"}
+            </span>
+            <span className="text-slate-500">{lowTemperature}°</span>
+            <span className="text-slate-800 font-bold">{highTemperature}°</span>
+          </div>
         </div>
-        <div className={eachElemClassName}>
-          <MutedText text={`${lowTemperature}°`} />
+
+        {/* Temperature bands visualization */}
+        <div className="flex flex-col gap-1.5">
+          {Object.entries(sourceRanges).map(([source, range]) => {
+            const sourceKey = source as SourceKey;
+            const colors = SOURCE_COLORS[sourceKey];
+            const startPercent = ((range.min - globalMin) / tempRange) * 100;
+            const widthPercent = ((range.max - range.min) / tempRange) * 100;
+
+            return (
+              <div key={source} className="flex items-center gap-2">
+                <span className={`text-xs ${colors.text} font-medium min-w-[35px]`}>
+                  {colors.name}
+                </span>
+                <div className="flex-1 h-2 bg-slate-100 rounded-full relative">
+                  <div
+                    className={`absolute h-full ${colors.bg} rounded-full`}
+                    style={{
+                      left: `${startPercent}%`,
+                      width: `${Math.max(widthPercent, 5)}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-slate-500 min-w-[50px] text-right">
+                  {range.min}° - {range.max}°
+                </span>
+              </div>
+            );
+          })}
         </div>
-        <div className={eachElemClassName}>-----</div>
-        <div className={eachElemClassName}>{highTemperature}°</div>
       </button>
       <SourcesSummary
         open={isOpen}
@@ -359,8 +534,14 @@ const HourlyWeatherContainer: React.FC<HourlyWeatherContainerProps> = ({
   );
   return (
     <WeatherBlock>
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">⏰</span>
+        <h2 className="text-lg font-semibold text-slate-700">
+          Time for time vejrudsigt
+        </h2>
+      </div>
       <div
-        className="flex flex-row gap-8 overflow-auto no-scrollbar select-none"
+        className="flex flex-row gap-4 overflow-auto no-scrollbar select-none"
         {...events}
         ref={ref}
       >
@@ -388,36 +569,66 @@ const HourlyWeather: React.FC<HourlyWeatherProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleDrawer = () => setIsOpen((prevState) => !prevState);
-  let tempElem = <span>{temperature}°</span>;
-  let iconElem = <WeatherIcon url={icon} />;
-  switch (type) {
-    case "sunrise":
-      tempElem = <span>Solopgang</span>;
-      iconElem = <span className="h-[40px]">🌅</span>;
-      break;
-    case "sunset":
-      tempElem = <span>Solnedgang</span>;
-      iconElem = <span className="h-[40px]">🌆</span>;
-      break;
+
+  // Handle sunrise/sunset differently
+  if (type === "sunrise" || type === "sunset") {
+    const timeFormat = "HH:mm";
+    return (
+      <div className="flex flex-col items-center p-2 min-w-[80px]">
+        <span className="text-sm">{format(time, timeFormat)}</span>
+        <span className="h-[40px] text-2xl">{type === "sunrise" ? "🌅" : "🌆"}</span>
+        <span className="text-xs text-slate-500">
+          {type === "sunrise" ? "Solopgang" : "Solnedgang"}
+        </span>
+      </div>
+    );
   }
-  let timeFormat = "HH";
-  if (type === "sunset" || type === "sunrise") {
-    timeFormat = "HH:mm";
-  }
+
+  const timeFormat = "HH";
+  const sources = wf?.entries ?? [];
+  const temperatures = sources.map((s) => s.temperature);
+  const consensus = calculateConsensus(temperatures);
 
   return (
     <button
-      className="flex flex-col items-center p-2 hover:bg-blue-300 rounded-md"
+      className="flex flex-col items-center p-3 hover:bg-slate-200 rounded-lg transition-colors min-w-[80px]"
       disabled={!wf}
       onClick={toggleDrawer}
     >
-      <span>
-        {isToday(time) && isSameHour(now, time) && !type
-          ? "Nu"
-          : format(time, timeFormat)}
+      <span className="text-sm font-medium mb-2">
+        {isToday(time) && isSameHour(now, time) ? "Nu" : format(time, timeFormat)}
       </span>
-      {iconElem}
-      {tempElem}
+
+      {/* Mini bar chart of sources */}
+      <div className="flex items-end gap-1 h-12 mb-2">
+        {sources.map((source) => {
+          const sourceKey = source.source.toLowerCase() as SourceKey;
+          const colors = SOURCE_COLORS[sourceKey];
+          const maxTemp = Math.max(...temperatures, temperature + 5);
+          const minTemp = Math.min(...temperatures, temperature - 5);
+          const range = maxTemp - minTemp || 10;
+          const height = ((source.temperature - minTemp) / range) * 100;
+
+          return (
+            <div
+              key={source.source}
+              className={`w-3 ${colors.bg} rounded-t`}
+              style={{ height: `${Math.max(height, 20)}%` }}
+              title={`${colors.name}: ${source.temperature}°`}
+            />
+          );
+        })}
+      </div>
+
+      {/* Weather icon */}
+      <WeatherIcon url={icon} />
+
+      {/* Average temperature with consensus indicator */}
+      <div className="flex items-center gap-1 mt-1">
+        <span className="font-bold">{temperature}°</span>
+        <span className={`text-xs ${consensus.color}`}>{consensus.level === "high" ? "✓" : consensus.level === "medium" ? "~" : "!"}</span>
+      </div>
+
       {wf && (
         <SourcesSummary
           open={isOpen}
@@ -435,7 +646,7 @@ const WeatherIcon = ({ url }: { url: string }) => {
 
 const WeatherBlock: React.FC<PropsWithChildren> = ({ children }) => {
   return (
-    <div className="flex flex-col rounded-lg bg-blue-400 text-white mt-8 mx-8 p-4">
+    <div className="flex flex-col rounded-xl bg-white shadow-lg mt-8 mx-8 p-6 border border-slate-200">
       {children}
     </div>
   );
@@ -463,42 +674,70 @@ const SourcesSummary: React.FC<SourcesSummaryProps> = ({
       <Drawer
         open={open}
         onClose={onClose}
-        direction="left"
-        size="80vw"
-        className="h-full overflow-scroll"
+        direction="bottom"
+        size="70vh"
+        className="h-full overflow-scroll bg-slate-50"
       >
-        <div className="text-black text-lg rounded p-2">
-          <table className="table-auto p-4 bg-white text-center">
-            <thead className="bg-gray-800 text-white">
-              <tr>
-                <th className="w-48">Timestamp</th>
-                <th className="w-12">Source</th>
-                <th className="w-48">Temperature</th>
-                <th className="w-48">Description</th>
-                <th className="w-48">Precipitation</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-700">
-              {orderedWeatherForecast.map((wf, i) => (
-                <tr
-                  key={`${wf.timestamp}:${wf.source}`}
-                  className={`${i % 2 === 1 ? "bg-gray-100" : ""} leading-10 `}
-                >
-                  <td>{format(parseISO(wf.timestamp), "MM-dd HH:mm")}</td>
-                  <td>{wf.source}</td>
-                  <td>{wf.temperature}°</td>
-                  <td className="flex justify-center">
-                    {getIconUrl(wf) ? (
-                      <WeatherIcon url={getIconUrl(wf)!} />
-                    ) : (
-                      <span>{wf.description}</span>
-                    )}
-                  </td>
-                  <td>{wf.precipitation}</td>
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-bold text-slate-800">Kilde detaljer</h3>
+            <button
+              onClick={onClose}
+              className="text-slate-500 hover:text-slate-700 text-3xl leading-none"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-slate-700 text-white">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Tid</th>
+                  <th className="px-4 py-3 text-left font-semibold">Kilde</th>
+                  <th className="px-4 py-3 text-left font-semibold">Temperatur</th>
+                  <th className="px-4 py-3 text-left font-semibold">Beskrivelse</th>
+                  <th className="px-4 py-3 text-left font-semibold">Nedbør</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orderedWeatherForecast.map((wf, i) => {
+                  const sourceKey = wf.source.toLowerCase() as SourceKey;
+                  const colors = SOURCE_COLORS[sourceKey];
+                  return (
+                    <tr
+                      key={`${wf.timestamp}:${wf.source}`}
+                      className={`${
+                        i % 2 === 1 ? "bg-white" : "bg-slate-100"
+                      } border-b border-slate-200`}
+                    >
+                      <td className="px-4 py-3 text-slate-700">
+                        {format(parseISO(wf.timestamp), "dd/MM HH:mm")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`${colors.text} font-semibold`}>
+                          {colors.name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-800">
+                        {wf.temperature}°
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {getIconUrl(wf) ? (
+                            <WeatherIcon url={getIconUrl(wf)!} />
+                          ) : (
+                            <span className="text-slate-600">{wf.description}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{wf.precipitation}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Drawer>
     </>

@@ -19,19 +19,21 @@ export const App = () => {
   if (error) return <p>error: {error}</p>;
   if (!cities) return <p>no data?</p>;
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 pb-8">
       {selectedCity && (
         <>
           <WeatherPage city={selectedCity} />
-          <div className="flex flex-row gap-4 mt-4">
+          <div className="flex flex-row gap-3 mt-8">
             {cities.map((city) => (
               <button
                 key={city}
                 title={city}
                 onClick={() => setSelectedCity(city)}
                 className={`${
-                  city === selectedCity ? "bg-blue-200" : "bg-blue-50"
-                } h-16 w-16 text-3xl rounded-md hover:bg-blue-200`}
+                  city === selectedCity
+                    ? "bg-slate-700 text-white shadow-lg"
+                    : "bg-white text-slate-500 shadow-md"
+                } h-14 w-14 text-2xl rounded-full hover:bg-slate-600 hover:text-white transition-all duration-200 border border-slate-300`}
               >
                 <span>&bull;</span>
               </button>
