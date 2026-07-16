@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsc -b && vite build && bun run ./src/app.ts",
-    "dev-api": "bun run ./src/app.ts",
+    "dev": "vite",
+    "dev-api": "go run .",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -15,13 +15,10 @@
     "@tailwindcss/vite": "^4.0.9",
     "@types/node": "^22.13.9",
     "@types/uuid": "^10.0.0",
-    "cheerio": "^1.0.0",
-    "chrono-node": "^2.7.8",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "easy-peasy": "^6.1.0",
     "glob": "^11.0.1",
-    "hono": "^4.7.2",
     "lodash": "^4.17.21",
     "milligram": "^1.4.1",
     "oadate": "^0.5.2",
@@ -37,7 +34,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
-    "@types/bun": "^1.2.4",
     "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

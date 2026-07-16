@@ -1,37 +1,37 @@
-# use the official Bun alpine image for smaller size
-# see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1-alpine AS base
-WORKDIR /usr/src/app
+FROM node:22-alpine AS frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY tsconfig*.json vite.config.ts ./
+COPY frontend/ ./frontend/
+RUN npm run build
 
-# install dependencies into temp directory
-# this will cache them and speed up future builds
-FROM base AS install
-RUN mkdir -p /temp/dev
-COPY package.json bun.lock /temp/dev/
-RUN cd /temp/dev && bun install --frozen-lockfile
+FROM golang:1.26 AS backend
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY main.go schema.sql Makefile ./
+COPY internal/ ./internal/
+# dist/ is go:embed'ed, so it has to be in place before the compile.
+COPY --from=frontend /app/dist/ ./dist/
+# modernc.org/sqlite is pure Go, so CGO can stay off and the binary is static:
+# no libc in the runtime image, and the frontend is embedded, so the binary is
+# the whole app.
+RUN CGO_ENABLED=0 make go-build
 
-# install with --production (exclude devDependencies)
-RUN mkdir -p /temp/prod
-COPY package.json bun.lock /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
+# Created here because distroless has no shell to mkdir with, and the volume
+# inherits this ownership: the container runs as nonroot (uid 65532) and has to
+# be able to write the database.
+RUN mkdir -p /data && chown 65532:65532 /data
 
-# copy node_modules from temp directory
-# then copy all (non-ignored) project files into the image
-FROM base AS prerelease
-COPY --from=install /temp/dev/node_modules node_modules
-COPY . .
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=backend /app/div /app/div
+COPY --from=backend --chown=65532:65532 /data /data
 
-# build frontend
-RUN bun run build
-
-# copy production dependencies and source code into final image
-FROM base AS release
-COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/src ./src
-COPY --from=prerelease /usr/src/app/dist ./dist
-COPY --from=prerelease /usr/src/app/package.json ./package.json
-
-# run the app
-USER bun
+# The SQLite cache lives here. It is disposable — the volume only saves a cold
+# start after a redeploy, and nothing in it is worth backing up.
+VOLUME /data
+ENV DB_PATH=/data/div.db
 EXPOSE 3000
-ENTRYPOINT [ "bun", "run", "src/app.ts" ]
+
+ENTRYPOINT ["/app/div"]

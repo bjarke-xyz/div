@@ -1,4 +1,4 @@
-import { sites } from "../src/sites";
+import { sites } from "./sites";
 
 function App() {
   const pathname = window.location.pathname;
