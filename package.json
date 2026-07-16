@@ -1,0 +1,53 @@
+{
+  "name": "div",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc -b && vite build && bun run ./src/app.ts",
+    "dev-api": "bun run ./src/app.ts",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/node": "^22.13.9",
+    "@types/uuid": "^10.0.0",
+    "cheerio": "^1.0.0",
+    "chrono-node": "^2.7.8",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "easy-peasy": "^6.1.0",
+    "glob": "^11.0.1",
+    "hono": "^4.7.2",
+    "lodash": "^4.17.21",
+    "milligram": "^1.4.1",
+    "oadate": "^0.5.2",
+    "react": "^19.0.0",
+    "react-day-picker": "^9.5.1",
+    "react-dom": "^19.0.0",
+    "react-modern-drawer": "^1.4.0",
+    "react-router-dom": "^7.2.0",
+    "react-use-draggable-scroll": "^0.4.7",
+    "swr": "^2.3.2",
+    "tailwindcss": "^4.0.9",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/bun": "^1.2.4",
+    "@types/lodash": "^4.17.16",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}
