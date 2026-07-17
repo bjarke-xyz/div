@@ -20,6 +20,7 @@ import (
 
 	"github.com/bjarke-xyz/div/internal/cache"
 	"github.com/bjarke-xyz/div/internal/fooddays"
+	"github.com/bjarke-xyz/div/internal/logging"
 	"github.com/bjarke-xyz/div/internal/server"
 	"github.com/bjarke-xyz/div/internal/va"
 	_ "modernc.org/sqlite"
@@ -35,6 +36,7 @@ var distFS embed.FS
 var schema string
 
 func main() {
+	logging.Setup()
 	if err := run(); err != nil {
 		slog.Error("fatal", "error", err)
 		os.Exit(1)
